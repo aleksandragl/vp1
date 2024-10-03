@@ -19,9 +19,14 @@ Esimest korda teen seda
 </p>
 <hr>
 <ul>
-<li><a href="/timenow">Ajainfo</a></li>
-<li><a href="/vanasonad">Vanasõnad</a></li>
-<li><a href="/regvisit">Registreeri oma külastus</a></li>
+<li><a href="/">Avaleht</a></li>
+</ul>
+<hr>
+<h2><%= h2 %></h2>
+<ul>
+  <% listData.forEach(function(item){ %>
+  <li><%= item %></li>
+  <% }); %>
 </ul>
 
 </body>
