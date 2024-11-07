@@ -4,13 +4,27 @@ const monthNamesEt = ["jaanuar","veebruar","märts","aprill","mai","juuni","juul
 const dateEt = function(){
 	
 let timeNow = new Date();
+//specDate = new Date ("12-27-1939");
 let dateNow = timeNow.getDate();
 let monthNow = timeNow.getMonth();
 let yearNow = timeNow.getFullYear();
 let dateNowEt = dateNow + ". " + monthNamesEt[monthNow] + " " + yearNow;
 return dateNowEt;
 }
+//uus for filmitegelased
+const givenDateFormatted = function(gDate){
+	let specDate = new Date (gDate);
+	return specDate.getDate() + ". " + monthNamesEt[specDate.getMonth() ] + " " + specDate.getFullYear();
+}
+	//uuuus comparison
 
+	
+	
+	//uuus comparison
+	
+	
+	
+//uusfor filmitegelased 
 const weekDayET =function(){
 	let timeNow = new Date();
 	let dayNow = timeNow.getDay();
@@ -53,4 +67,4 @@ const partOfDay = function() {
     }
     return dayPart;
 }
-module.exports = {monthsEt : monthNamesEt,weekdaysET : weekdayNamesEt,dateEt: dateEt,weekDayEt: weekDayET,currentTime: CurrentTime,partOfDay: partOfDay,};
+module.exports = {monthsEt : monthNamesEt,weekdaysET : weekdayNamesEt,dateEt: dateEt,weekDayEt: weekDayET,currentTime: CurrentTime,partOfDay: partOfDay,givenDateFormatted: givenDateFormatted};

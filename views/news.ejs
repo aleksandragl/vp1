@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+<meta charset="UTF-8">
+
+
+</head>
+<body>
+<img src="/banner/vp_banner_2024.png"alt="Veebiprogrameerimise 2024 aasta kursuse bänner">
+ <h1>Aleksandra </h1>
+ 
+
+<p>See leht loodus õppetöö raames <a href= "https://www.tlu.ee/" target="_blank">Tallinna Ülikoolis</a> ja ei sisalda tõsiseltvõetavat sisu.</p>
+
+<p> loodan et kõik töötab <br>
+webprogrameerimine äge asi <br>
+Esimest korda teen seda
+
+</p>
+
+<h2>Uudised</h2>
+<ul>
+        <% news.forEach(function(item) { %>
+            <li>
+                <h3>Pealkiri: <%= item.news_title %></h3>
+				<p>Lisatud kuupäev: <%= item.news_date %></p>
+                <p>Aegumiskuupäev: <%= item.expire_date %></p>
+                <pre>Sisu: <%= item.news_text %></pre>
+                
+            </li>
+        <% }); %>
+    </ul>
+<li><a href="/">Avaleht</a></li>
+</body>
+</html>
