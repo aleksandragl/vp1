@@ -11,8 +11,11 @@ const multer = require("multer");
 const sharp = require("sharp");
 //parooli krüpteerimiseks
 const bcrypt = require("bcrypt");
+//sessionihaldur
+const session = require("express-session");
 
 const app = express();
+app.use(session({secret: "koer", saveUninitialized: true, resave: true}));
 app.set("view engine", "ejs");
 app.use(express.static("public"));
 app.use(bodyparser.urlencoded({extended: true}));
@@ -28,6 +31,22 @@ const conn = mysql.createConnection({
 	database: dbInfo.configData.dataBase
 });
 
+const checkLogin = function(req, res, next){
+	if(req.session != null){
+		if(req.session.userId){
+			console.log("Login, sees kasutaja: " + req.session.userId);
+			next();
+		}
+		else {
+			console.log("login not detected");
+			res.redirect("/signin");
+		}
+	}
+	else {
+		console.log("session not detected");
+		res.redirect("/signin");
+	}
+}
 
 
 app.get("/", (req,res) => {
@@ -411,7 +430,7 @@ app.get("/gallery", (req, res)=>{
 		else {
 			console.log(result);
 			for(let i = 0; i < result.length; i ++) {
-				photoList.push({href: "/Gallery/thumb/" + result[i].file_name, alt: result[i].alt_text});
+				photoList.push({href: "/Gallery/thumb/" + result[i].file_name, alt: result[i].alt_text, fileName: result[i].file_name}); //muudatusi 14.11
 			}
 		
 			res.render("gallery", {listData: photoList});
@@ -472,8 +491,10 @@ app.post("/signin", (req, res)=>{
 						else {
 							//kas õige või vale parool
 							if(compareresult){
-								notice = "Oled sisse loginud";
-								res.render("signin", {notice: notice});
+								//notice = "Oled sisse loginud"; // 14.11
+								//res.render("signin", {notice: notice});
+								req.session.userId = result[0].id;
+								res.redirect("/home");
 							}
 							else {
 								notice = "Kasutajatunnus ja/või parool on vale";
@@ -495,54 +516,111 @@ app.post("/signin", (req, res)=>{
 		//res.render("signup");
 });
 
-
-app.get("/signup", (req, res)=>{
-	res.render("signup");
+app.get("/home", checkLogin, (req, res)=>{ ///////////////////uuuut 14.11       
+	console.log("Sees on kasitaja:" + req.session.userId);
+	res.render("home");
 });
+
+app.get("/logout", (req, res)=>{ ///////////////////uuuut 14.11       
+	req.session.destroy();
+	console.log("Välja loogitud");
+	res.redirect("/");
+});
+
+app.get("/signup", (req, res)=>{ ////////////////////////////////uuuut 10.11          ////res.render("signup");
+	res.render("signup", { notice: "",
+		firstNameInput: req.query.firstNameInput || "", 
+		lastNameInput: req.query.lastNameInput || "",
+		birthDateInput: req.query.birthDateInput || "",
+		emailInput: req.query.emailInput || ""});
+});
+
 
 app.post("/signup", (req, res)=>{
 	let notice = "Ootan andmed";
+	
 	console.log(req.body);
 	if(!req.body.firstNameInput || !req.body.lastNameInput || !req.body.birthDateInput || !req.body.genderInput || !req.body.emailInput || req.body.passwordInput.length < 8 || req.body.passwordInput !== req.body.confirmPasswordInput){
 		console.log("Andmeid on puudu või paroolid ei kattu");
 		notice = "Andmeid on puudu,parool liiga lühike või paroolid ei kattu";
-		res.render("signup", {notice: notice});
-	}//kui andmetes viga... lõpeb
+		res.render("signup", {notice: notice,
+						      firstNameInput: req.body.firstNameInput,
+							  lastNameInput: req.body.lastNameInput,
+							  birthDateInput: req.body.birthDateInput,
+							  emailInput: req.body.emailInput }); 
+	}//kui andmetes viga... lõpeb      /////////////////////////////////////10.11 ////////////////////////////////////////////////////
 	else {
-		notice = "Andmed korras!";
-		//loome parooli räsi jaoks "soola"
-		bcrypt.genSalt(10, (err, salt)=> {
-			if(err){
-				notice = "Tehniline viga parooli krüpteerimisel, kasutajat ei loodud";
-				res.render("signup", {notice: notice});
-			}
-			else {
-				//krüpteerime
-				bcrypt.hash(req.body.passwordInput, salt, (err, pwdHash)=>{
-					if(err){
-						notice = "Tehniline viga parooli krüpteerimisel, kasutajat ei loodud";
-						res.render("signup", {notice: notice});
-					}
-					else{
-						let sqlReq = "INSERT INTO users (first_name, last_name, birth_date, gender, email, password) VALUES(?, ?, ?, ?, ?, ?)";
-						console.log(req.body.firstNameInput + " " + req.body.lastNameInput + " " + req.body.birthDateInput + " " + req.body.genderInput + " " + req.body.emailInput + " " + pwdHash);
-						conn.execute(sqlReq, [req.body.firstNameInput, req.body.lastNameInput, req.body.birthDateInput, req.body.genderInput, req.body.emailInput, pwdHash], (err, result)=>{
+	    conn.execute("SELECT id FROM users WHERE email = ?", [req.body.emailInput], (err, results) => {
+            if (err) {
+                console.error("Viga olemasoleva kasutaja kontrollimisel:", err);
+                notice = "Tehniline viga, proovige uuesti";
+                res.render("signup", { notice: notice, 
+					firstNameInput: req.body.firstNameInput,
+					lastNameInput: req.body.lastNameInput,
+					birthDateInput: req.body.birthDateInput,
+					emailInput: req.body.emailInput }); /////////////////////// uuuut firstName, lastName, birthDate, emailInput
+            } else if (results.length > 0) {
+                // 
+                notice = "Kasutaja sellise e-mailiga on juba olemas.";
+				res.render("signup", { notice: notice,
+					firstNameInput: req.body.firstNameInput,
+					lastNameInput: req.body.lastNameInput,
+					birthDateInput: req.body.birthDateInput,
+					emailInput: req.body.emailInput}); /////////////////////// uuuut firstName, lastName, birthDate, emailInput,
+            } else {       ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+					notice = "Andmed korras!";
+					//loome parooli räsi jaoks "soola"
+					bcrypt.genSalt(10, (err, salt)=> {
+						if(err){
+							notice = "Tehniline viga parooli krüpteerimisel, kasutajat ei loodud";
+							res.render("signup", {notice: notice, 
+								firstNameInput: req.body.firstNameInput,
+								lastNameInput: req.body.lastNameInput,
+								birthDateInput: req.body.birthDateInput,
+								emailInput: req.body.emailInput});
+						}
+					else {
+						//krüpteerime
+						bcrypt.hash(req.body.passwordInput, salt, (err, pwdHash)=>{
 							if(err){
-								notice = "Tehniline viga andmebaasi kirjutamisel,kasutajat ei loodud";
-								res.render("signup", {notice: notice});
+								notice = "Tehniline viga parooli krüpteerimisel, kasutajat ei loodud";
+								res.render("signup", {notice: notice, 
+									firstNameInput: req.body.firstNameInput,
+									lastNameInput: req.body.lastNameInput,
+									birthDateInput: req.body.birthDateInput,
+									emailInput: req.body.emailInput}); /////////////////////// uuuut firstName, lastName, birthDate, emailInput, 
 							}
-							else {
-								notice = "Kasutaja " + req.body.emailInput + "edukalt loodud!";
-								res.render("signup", {notice: notice});
-							}
-						});//conn.execute lõpp
-					}
-				});//hash lõppeb
-			}
-		}); //genSalt lõppeb
-		
-	}//kui andmed korras, lõppeb
-	//res.render("signup");
-});
+							else{
+								let sqlReq = "INSERT INTO users (first_name, last_name, birth_date, gender, email, password) VALUES(?, ?, ?, ?, ?, ?)";
+								console.log(req.body.firstNameInput + " " + req.body.lastNameInput + " " + req.body.birthDateInput + " " + req.body.genderInput + " " + req.body.emailInput + " " + pwdHash);
+								conn.execute(sqlReq, [req.body.firstNameInput, req.body.lastNameInput, req.body.birthDateInput, req.body.genderInput, req.body.emailInput, pwdHash], (err, result)=>{
+									if(err){
+										notice = "Tehniline viga andmebaasi kirjutamisel,kasutajat ei loodud";
+										res.render("signup", {notice: notice, 
+											firstNameInput: req.body.firstNameInput,
+											lastNameInput: req.body.lastNameInput,
+											birthDateInput: req.body.birthDateInput,
+											emailInput: req.body.emailInput}); /////////////////////// uuuut firstName, lastName, birthDate, emailInput, 
+									}
+									else {
+										notice = "Kasutaja " + req.body.emailInput + "edukalt loodud!";
+										res.render("signup", {notice: notice,
+											firstNameInput: req.body.firstNameInput,
+											lastNameInput: req.body.lastNameInput,
+											birthDateInput: req.body.birthDateInput,
+											emailInput: req.body.emailInput});
+									}
+                                }); //conn.execute lõpp
+                            }
+                        }); //bcrypt.hash lõppeb
+                    }
+                }); //bcrypt.genSalt lõppeb
+            } //kui andmed korras, lõppeb
+        }); //conn.execute lõppeb
+    } //else lõppeb
+}); //app.post lõppeb
+
+
+
 
 app.listen(5112);

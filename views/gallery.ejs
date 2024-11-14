@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 
-
+<link rel="stylesheet" href="/style/gallery.css">
+<link rel="stylesheet" href="/style/modal.css">
+<script src="/script/gallery.js" defer></script>
 </head>
 <body>
 <img src="/banner/vp_banner_2024.png"alt="Veebiprogrameerimise 2024 aasta kursuse bänner">
@@ -19,15 +21,29 @@ Esimest korda teen seda
 </p>
 <hr>
 <ul>
-<li><a href="/">Avaleht</a></li>
+<li><a href="/home">Avaleht</a></li>
 </ul>
 <hr>
+<dialog id="modal" class="modalarea">
+  <span id="modalClose" class="modalclose">&times;</span>
+  <div class="modalhorizontal">
+	<div class="modalvertical">
+		<p id="modalCaption"></p>
+		<img id="modalImage" src="/pics/empty.png" alt="galeriipilt">
+	</div>
+</dialog>
+
 <h2>Galerii</h2>
-<% listData.forEach(function(image){ %>
-	<img src="<%= image.href %>" alt="<%= image.alt %>">
-	<p><%= image.alt %></p>
+<div id="gallery" class="gallery">
+
+<% listData.forEach(function(image){ %>                                   
+	<img src="<%= image.href %><%= image.filename %>" alt="<%= image.alt %>"class="thumbs" data-filename="<%= image.fileName %>">
   <% }); %>
+
 
 
 </body>
 </html>
+
+
+
