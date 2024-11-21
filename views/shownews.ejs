@@ -7,7 +7,7 @@
 </head>
 <body>
 <img src="/banner/vp_banner_2024.png"alt="Veebiprogrameerimise 2024 aasta kursuse bänner">
- <h1>Aleksandra </h1>
+ <h1>Tere, <%= firstName %> <%= lastName %>!</h1>
  
 
 <p>See leht loodus õppetöö raames <a href= "https://www.tlu.ee/" target="_blank">Tallinna Ülikoolis</a> ja ei sisalda tõsiseltvõetavat sisu.</p>
@@ -17,15 +17,19 @@ webprogrameerimine äge asi <br>
 Esimest korda teen seda
 
 </p>
-<hr>
-<h2>Eesti film</h2>
+
+<h2>Uudised</h2>
 <ul>
+        <% news.forEach(function(item) { %>
+            <li>
+                <h3>Pealkiri: <%= item.news_title %></h3>
+				<p>Lisatud kuupäev: <%= item.news_date %></p>
+                <p>Aegumiskuupäev: <%= item.expire_date %></p>
+                <pre>Sisu: <%= item.news_text %></pre>
+                
+            </li>
+        <% }); %>
+    </ul>
 <li><a href="/home">Avaleht</a></li>
-<li><a href="/eestifilm/tegelased">Eesti filmitegelased</a></li>
-<li><a href="/eestifilm/lisaSeos">Lisa filmitegelaste seoseid</a></li>
-</ul>
-<hr>
-
-
 </body>
 </html>
