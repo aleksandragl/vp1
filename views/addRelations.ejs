@@ -24,7 +24,10 @@ Esimest korda teen seda
 </ul>
 <hr>
 <h2>Lisa seoseid</h2>
-<form method="POST">
+<% if (notice) { %>
+    <p><%= notice %></p>
+<% } %>
+<form method="POST" action="/eestifilm/lisaseos">                                       <!-- <form method="POST"> -->
     <label for="personSelect">Filmitegelane</label>
 	<br>
 	<select id="personSelect" name="personSelect">

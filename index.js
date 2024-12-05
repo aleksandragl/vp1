@@ -171,102 +171,27 @@ app.post("/regvisitdb", (req, res)=>{
 	}
 });
 
-app.get("/eestifilm", (req, res)=>{
-	res.render("filmindex");
-});	
 
-app.get("/eestifilm/tegelased", (req, res)=>{
-	let sqlReq = "SELECT first_name, last_name, birth_date FROM person";
-	let persons = [];
-	conn.query(sqlReq, (err, sqlres)=>{
-		if(err){
-			throw err;
-		}
-		else {
-			console.log(sqlres);
-		
-			//persons = sqlres;     uuuus 17.10
-			//for   i   algab  0 piiriks sqlres.length
-			//tsükli sees lisame persons listile uue elemendi,mis on ise "object"{first_name: sqlres[i].first_name}
-			//listi liisamiseks on käsk
-			//push.persons(lisatav element);
-			for (let i = 0; i < sqlres.length; i ++){
-				persons.push({first_name: sqlres[i].first_name, last_name: sqlres[i].last_name,birth_date: dtEt.givenDateFormatted(sqlres[i].birth_date)});
-			}
-			res.render("tegelased", {persons: persons});
-			
-		}
-	});
-	//res.render("tegelased");
-});
-
-app.get("/eestifilm/lisaSeos", (req, res)=>{
-	//võtan kasutusele asyne mooduli et korraga teha mitu andmebaasipäringut
-	const filmQueries = [
-		function(callback){
-			let sqlReq1 = "SELECT id, first_name, last_name, birth_date FROM person ";
-			conn.execute(sqlReq1, (err, result)=>{
-				if(err){
-					return callback(err);
-				}
-				else {
-					return callback(null, result);
-				}
-			});
-		},
-		function(callback){
-			let sqlReq2 = "SELECT id, title, production_year FROM movie ";
-			conn.execute(sqlReq2, (err, result)=>{
-				if(err){
-					return callback(err);
-				}
-				else {
-					return callback(null, result);
-				}
-			});
-		},
-		function(callback){
-			let sqlReq3 = "SELECT id, position_name FROM position ";
-			conn.execute(sqlReq3, (err, result)=>{
-				if(err){
-					return callback(err);
-				}
-				else {
-					return callback(null, result);
-				}
-			});
-		},
-		
-	];
-	
-	//paneme need päringut ehk siis funktsioonid paralelselt käima,tulemuseks saame kolme päringu koondi
-	async.parallel(filmQueries, (err, results)=>{
-		if(err){
-			throw err;
-		}
-		else{
-			console.log(results);
-			res.render("addRelations", {personList: results[0], movieList: results[1], positionList: results[2]});
-		}
-	});
-	//res.render("addRelations");
-});	
 
 
 //uudiste osa eraldi marsruutide failiga
+
+//Eesti film osa eraldi ruuteriga
+
+
+const eestifilmRouter = require("./routes/eestifilmRoutes");
+app.use("/eestifilm", eestifilmRouter);
+
 const newsRouter = require("./routes/newsRoutes");
 app.use("/news", newsRouter);
 
+const galleryRouter = require("./routes/galleryRoutes");  
+app.use("/gallery", galleryRouter);
+
+const photouploadRouter = require("./routes/photouploadRoutes");
+app.use("/photoupload", photouploadRouter);
 
 
-
-
-
-
-
-//uus asi!!!!!!!!!29.10
-
-//uus asi!!!!!!!!!16.10
 app.get("/visitlogdb", (req, res) => {
     let sql = "SELECT first_name, last_name, visit_time FROM visitlog";
     conn.query(sql, (err, results) => {
@@ -278,168 +203,10 @@ app.get("/visitlogdb", (req, res) => {
 });
 
 
-app.get("/3vorm", (req, res) => {
-    let notice = "";
-    let firstName = "";
-	let lastName = "";
-	let birthDate = "";
-    let title = "";
-    let positionName = "";
-	let productionYear = "";
-	let description = "";
-    res.render("3vorm", {notice: notice,firstName: firstName, lastName: lastName,title: title,positionName: positionName});
-});
-
-app.post("/addperson", (req, res) => {
-
-        let notice = "";
-	    let firstName = "";
-	    let lastName = "";
-		let birthDate = ""; //on vaja kirjutada nagu 2001.03.04
-        if(req.body.personSubmit ){
-		firstName = req.body.firstName;
-		lastName = req.body.lastName;
-		birthDate = req.body.birthDate;
-        if (!firstName || !lastName) {
-		    notice = "Osa andmeid sisestamata";
-		    res.render("3vorm", {notice: notice,firstName: firstName, lastName: lastName});
-        }
-        else{ 
-            let sqlreq = "INSERT INTO person (first_name, last_name, birth_date) VALUES (?,?,?)";
-            conn.query(sqlreq, [req.body.firstName, req.body.lastName, req.body.birthDate], (err, sqlres)=>{
-                if (err) {
-                    throw err;
-                } else {
-                    notice = "Tegelane lisatud";
-                    res.render("3vorm", { notice: notice, firstName: firstName, lastName: lastName,birthDate: birthDate });
-                }
-            });
-        }
-    }
-});
-
-app.post("/addfilm", (req, res) => {
-    let title = "";
-    let notice = "";
-	let productionYear = "";
-	let duration = "";
-	let description = "";
-    if (req.body.filmSubmit) {
-        title = req.body.title;
-		productionYear = req.body.productionYear; 
-		duration = req.body.duration;
-		description = req.body.description;
-        if (!title || !productionYear || !duration || !description) {
-            notice = "Osa andmeid sisestamata";
-            res.render("3vorm", { notice: notice });
-        } else {
-            let sqlReq = "INSERT INTO movie (title, production_year,duration,description) VALUES (?,?,?,?)";
-            conn.query(sqlReq, [req.body.title, req.body.productionYear,req.body.duration,req.body.description], (err, sqlres) => {
-                if (err) {
-                    throw err;
-                } else {
-                    notice = "Film lisatud";
-                    res.render("3vorm", { notice: notice, title: title,productionYear: productionYear,duration: duration,description: description});
-                }
-            });
-        } 
-    }
- });
-
-app.post("/addrole", (req, res) => {
-    let positionName = "";
-    let notice = "";
-	let description = "";
-    
-    if (req.body.roleSubmit) {
-        positionName = req.body.positionName;
-	    description = req.body.description
-        if (!positionName|| !description) {
-            notice = "Osa andmeid sisestamata";
-            res.render("3vorm", { notice: notice });
-        } else {
-            let sqlReq = "INSERT INTO `position` (position_name,description) VALUES (?,?)";
-            conn.query(sqlReq, [positionName,description], (err, sqlres) => {
-                if (err) {
-                    throw err;
-                } else {
-                    notice = "Roll lisatud";
-                    res.render("3vorm", { notice: notice, positionName: positionName,description: description });
-                }
-            });
-        }
-    }
-});
-
 //uuuuus aasi !!!!!!!!!
 
-app.get("/photoupload", (req, res)=>{
-	res.render("photoupload",{ notice: "",firstName: req.session.firstName,lastName: req.session.lastName }); //
-});
 
-app.post("/photoupload", upload.single("photoInput"), (req,res)=>{
-	let notice = ""; //
-	console.log(req.body);
-	console.log(req.file);
-	//genereerimi oma failinime
-	 	//
-	
-	if (!req.file) {  // 
-    notice = "faili pole valitud"; //
-    return res.render("photoupload", { notice: notice }); //
-	
-}
-	if (!req.body.altInput || req.body.altInput === "") { //
-    notice = "kirjeldus puudub";                            ////
-    return res.render("photoupload", { notice: notice }); //
 
-}
-	const fileName = "vp_" + Date.now() + ".jpg";
-	//nimetame üleslaetud faili ümber
-	fs.rename(req.file.path, req.file.destination + fileName, (err)=>{
-		console.log(err);
-									//notice = "Pildi üleslaadimisel tekkis viga.";//
-									//return res.render("photoupload", { notice: notice }); //
-	
-	});	
-	//teeme 2 erisuurust
-	sharp(req.file.destination + fileName).resize(800,600).jpeg({quality: 90}).toFile("./public/Gallery/normal/" + fileName);
-	sharp(req.file.destination + fileName).resize(100,100).jpeg({quality: 90}).toFile("./public/Gallery/thumb/" + fileName);
-	//salvestame andmebaasis
-	let sqlReq = "INSERT INTO photos (file_name, orig_name, alt_text, privacy, user_id) VALUES(?,?,?,?,?)";
-	const userId = req.session.userId; /////muudetud 19.11
-	conn.query(sqlReq, [fileName, req.file.originalname, req.body.altInput, req.body.privacyInput, userId], (err, result)=>{
-		if(err){
-			throw err; 				//notice = "Pildi üleslaadimisel tekkis viga.";//
-									//return res.render("photoupload", { notice: notice }); //
-		}
-		else {
-			notice = "pilt on üles laaditud!";//
-			res.render("photoupload", { notice: notice,firstName: req.session.firstName,lastName: req.session.lastName }); //firstName: req.session.firstName,lastName: req.session.lastName
-		}
-	});
-	//res.render("photoupload");
-});
-
-app.get("/gallery", (req, res)=>{
-	let sqlReq = "SELECT file_name, alt_text FROM photos WHERE privacy = ? AND deleted IS NULL ORDER BY id DESC";
-	const privacy = 3;
-	let photoList = [];
-	conn.query(sqlReq, [privacy], (err, result)=>{
-		if(err){
-			throw err;
-		}
-		else {
-			console.log(result);
-			for(let i = 0; i < result.length; i ++) {
-				photoList.push({href: "/Gallery/thumb/" + result[i].file_name, alt: result[i].alt_text, fileName: result[i].file_name}); //muudatusi 14.11
-			}
-		
-			res.render("gallery", {listData: photoList,firstName: req.session.firstName,lastName: req.session.lastName}); /////// firstName: req.session.firstName,lastName: req.session.lastName 20.11 lisasin
-		}
-	});
-	//res.render("gallery");
-});
 //uuuut 07.11 14:40
 app.get("/", (req, res)=>{
 const semStartDate = new Date("2024-09-02")

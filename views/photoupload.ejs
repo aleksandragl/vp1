@@ -26,7 +26,7 @@ Esimest korda teen seda
 <% if (notice) { %>
     <p><%= notice %></p>
 <% } %>
-<form method="POST" enctype="multipart/form-data">
+<form method="POST" action="/photoupload" enctype="multipart/form-data">
 <label for="photoInput">Vaali soovitud pildifail: </label>
 <input id="photoInput" name="photoInput" type="file">
 <br>
